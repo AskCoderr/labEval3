@@ -12,10 +12,10 @@ class GUIandLogic():
         self.canvas.pack()
         self.paddle1 = self.canvas.create_rectangle(10,
                                                     150,
-                                                    30,
+                                                    20,
                                                     250,
                                                     fill="white")
-        self.paddle2 = self.canvas.create_rectangle(570,
+        self.paddle2 = self.canvas.create_rectangle(580,
                                                     150,
                                                     590,
                                                     250,
@@ -35,6 +35,7 @@ class GUIandLogic():
             self.scoredisplay,
             text=f"{self.player1_score} - {self.player2_score}")
         self.ps = 20
+        self.collision_flag = False
         self.paddle1top = [
             self.canvas.coords(self.paddle1)[2],
             self.canvas.coords(self.paddle1)[1]
@@ -92,7 +93,6 @@ class GUIandLogic():
 
     # when calling this function pass the parameter w if ball collides with wall, p if colliding with paddle
     def update_velocity(self, x):
-        global y_velocity, x_velocity
         if x == "w":
             self.y_velocity *= -1
         elif x == "p":
@@ -127,16 +127,39 @@ class GUIandLogic():
         self.update_ball_points()
         root.after(10, self.update_ball_position)
 
+    def reset_collision_flag(self):
+        """Resets the collision flag after a brief delay."""
+        self.collision_flag = False
+
     def collision(self):
-        if (self.ballMiddleLeft[0] < 0) or (self.ballMiddleRight[0] > 600):
-            self.canvas.coords(self.ball, 290, 190, 310, 210)
-        elif (self.ballTopMiddle[1] < 0) or (self.ballBottomMiddle[1] > 400):
+        ball_coords = self.canvas.coords(self.ball)
+        paddle1_coords = self.canvas.coords(self.paddle1)
+        paddle2_coords = self.canvas.coords(self.paddle2)
+
+        # Check collision with walls
+        if ball_coords[1] < 0 or ball_coords[3] > 400:
             self.update_velocity("w")
-        elif (self.ballMiddleLeft[0] <= self.paddle1bottom[0]
-              and self.paddle1top[1]<=self.ballMiddleLeft[1]<=self.paddle1bottom[1]):
-            self.update_velocity("p")
-        elif (self.ballMiddleRight[0] >= self.paddle2top[0] and self.paddle2top[1]<=self.ballMiddleRight[1]<=self.paddle2bottom[1]):
-            self.update_velocity("p")
+
+        # Check collision with paddles
+        if not self.collision_flag:
+            # Paddle 1 collision
+            if (ball_coords[0] <= paddle1_coords[2]
+                    and paddle1_coords[1] <= ball_coords[3] <= paddle1_coords[3]):
+                self.update_velocity("p")
+                self.collision_flag = True
+                root.after(1000, self.reset_collision_flag)
+
+            # Paddle 2 collision
+            if (ball_coords[2] >= paddle2_coords[0]
+                    and paddle2_coords[1] <= ball_coords[3] <= paddle2_coords[3]):
+                self.update_velocity("p")
+                self.collision_flag = True
+                root.after(1000, self.reset_collision_flag)
+
+        # Reset ball position if it goes out of bounds
+        if ball_coords[0] < 0 or ball_coords[2] > 600:
+            self.canvas.coords(self.ball, 290, 190, 310, 210)
+
         root.after(10, self.collision)
 
 
