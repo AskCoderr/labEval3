@@ -70,26 +70,49 @@ class GUIandLogic():
         ]
         self.update_ball_position()
         self.collision()
+        
+        self.p1_up = False
+        self.p1_down = False
+        self.p2_up = False
+        self.p2_down = False
+        self.move_paddles()
+
+
 
     def moveup1(self, event):
-        if self.canvas.coords(self.paddle1)[1] > 0:
-            self.canvas.move(self.paddle1, 0, -self.ps)
-            self.update_paddle_points()
+        self.p1_up = True
 
     def movedown1(self, event):
-        if self.canvas.coords(self.paddle1)[3] < 400:
-            self.canvas.move(self.paddle1, 0, self.ps)
-            self.update_paddle_points()
+        self.p1_down = True
 
     def moveup2(self, event):
-        if self.canvas.coords(self.paddle2)[1] > 0:
-            self.canvas.move(self.paddle2, 0, -self.ps)
-            self.update_paddle_points()
+        self.p2_up = True
 
     def movedown2(self, event):
-        if self.canvas.coords(self.paddle2)[3] < 400:
+        self.p2_down = True
+
+    def stop_moveup1(self, event):
+        self.p1_up = False
+
+    def stop_movedown1(self, event):
+        self.p1_down = False
+
+    def stop_moveup2(self, event):
+        self.p2_up = False
+
+    def stop_movedown2(self, event):
+        self.p2_down = False
+            
+    def move_paddles(self):
+        if self.p1_up and self.canvas.coords(self.paddle1)[1] > 0:
+            self.canvas.move(self.paddle1, 0, -self.ps)
+        if self.p1_down and self.canvas.coords(self.paddle1)[3] < 400:
+            self.canvas.move(self.paddle1, 0, self.ps)
+        if self.p2_up and self.canvas.coords(self.paddle2)[1] > 0:
+            self.canvas.move(self.paddle2, 0, -self.ps)
+        if self.p2_down and self.canvas.coords(self.paddle2)[3] < 400:
             self.canvas.move(self.paddle2, 0, self.ps)
-            self.update_paddle_points()
+        root.after(20, self.move_paddles)  # Run this every 20ms
 
     # when calling this function pass the parameter w if ball collides with wall, p if colliding with paddle
     def update_velocity(self, x):
@@ -146,6 +169,8 @@ class GUIandLogic():
             if (ball_coords[0] <= paddle1_coords[2]
                     and paddle1_coords[1] <= ball_coords[3] <= paddle1_coords[3]):
                 self.update_velocity("p")
+                self.x_velocity += (abs(self.x_velocity)/self.x_velocity)*(0.01)
+                self.y_velocity += (abs(self.y_velocity)/self.y_velocity)*(0.01)
                 self.collision_flag = True
                 root.after(1000, self.reset_collision_flag)
 
@@ -153,12 +178,15 @@ class GUIandLogic():
             if (ball_coords[2] >= paddle2_coords[0]
                     and paddle2_coords[1] <= ball_coords[3] <= paddle2_coords[3]):
                 self.update_velocity("p")
+                self.x_velocity += (abs(self.x_velocity)/self.x_velocity)*(0.01)
+                self.y_velocity += (abs(self.y_velocity)/self.y_velocity)*(0.01)
                 self.collision_flag = True
                 root.after(1000, self.reset_collision_flag)
 
         # Reset ball position if it goes out of bounds
         if ball_coords[0] < 0 or ball_coords[2] > 600:
             self.canvas.coords(self.ball, 290, 190, 310, 210)
+            self.x_velocity, self.y_velocity = 0.3, 0.3
 
         root.after(10, self.collision)
 
@@ -168,4 +196,10 @@ root.bind("w", run.moveup1)
 root.bind("s", run.movedown1)
 root.bind('<Up>', run.moveup2)
 root.bind('<Down>', run.movedown2)
+
+root.bind("<KeyRelease-w>", run.stop_moveup1)
+root.bind("<KeyRelease-s>", run.stop_movedown1)
+root.bind("<KeyRelease-Up>", run.stop_moveup2)
+root.bind("<KeyRelease-Down>", run.stop_movedown2)
+
 root.mainloop()
