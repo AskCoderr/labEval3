@@ -1,4 +1,6 @@
 import tkinter as tk
+import csv
+import os
 
 root = tk.Tk()
 root.title("Ping Pong Game")
@@ -23,8 +25,8 @@ class GUIandLogic():
         self.ball = self.canvas.create_oval(290, 190, 310, 210, fill="red")
         self.player1_score = 0
         self.player2_score = 0
-        self.x_velocity = 0.3  # im considering the unit as pixel/10 ms
-        self.y_velocity = 0.3
+        self.x_velocity = 1  # im considering the unit as pixel/10 ms
+        self.y_velocity = 1
         self.scoredisplay = self.canvas.create_text(
             300,
             50,
@@ -153,6 +155,19 @@ class GUIandLogic():
     def reset_collision_flag(self):
         """Resets the collision flag after a brief delay."""
         self.collision_flag = False
+        
+    def check_winner(self):
+        if self.player1_score == 10:
+            self.declare_winner("Player 1")
+        elif self.player2_score == 10:
+            self.declare_winner("Player 2")    
+
+    def declare_winner(self, winner):
+        self.game_over = True
+        self.canvas.create_text(300, 200, text=f"{winner} Wins!", fill="yellow", font=("Helvetica", 32))
+        self.canvas.delete(self.ball)  # Stop the ball after the game ends
+        self.save_game_data()
+
 
     def collision(self):
         ball_coords = self.canvas.coords(self.ball)
@@ -185,10 +200,31 @@ class GUIandLogic():
 
         # Reset ball position if it goes out of bounds
         if ball_coords[0] < 0 or ball_coords[2] > 600:
+            if ball_coords[0] < 0:
+                self.player2_score += 1
+            else:
+                self.player1_score += 1
+            self.canvas.itemconfig(
+                self.scoredisplay,
+                text=f"{self.player1_score} - {self.player2_score}")
+            self.check_winner()
             self.canvas.coords(self.ball, 290, 190, 310, 210)
-            self.x_velocity, self.y_velocity = 0.3, 0.3
+            self.x_velocity, self.y_velocity = 1, 1
 
         root.after(10, self.collision)
+
+    def save_game_data(self): 
+        with open(r"D:\coding\VSCode\amrita\lab_eval\3\scores.csv", "r", newline="") as my_file:
+            reader = csv.reader(my_file)
+            num_rows = sum(1 for row in reader)
+
+        with open(r"D:\coding\VSCode\amrita\lab_eval\3\scores.csv", "a", newline="") as file:
+            writer = csv.writer(file)
+            game_count = num_rows
+            if num_rows == 0:
+                writer.writerow(["Game Number", "Player 1 Score", "Player 2 Score"])
+                game_count += 1
+            writer.writerow([game_count, self.player1_score, self.player2_score])
 
 
 run = GUIandLogic(root)
